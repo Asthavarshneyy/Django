@@ -20,6 +20,7 @@ from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadOnly
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 @api_view(['GET'])
@@ -50,6 +51,7 @@ class SnippetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+   
 # class SnippetHighlight(generics.GenericAPIView):
 #     queryset = Snippet.objects.all()
 #     renderer_classes = [renderers.StaticHTMLRenderer]
@@ -59,12 +61,23 @@ class SnippetViewSet(viewsets.ModelViewSet):
 #         return Response(snippet.highlighted)
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list` and `retrieve` actions.
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    # def update_view(request, id):
+    def get_object(self):
+        if self.action == 'create':
+            queryset = self.filter_queryset(self.get_queryset())
+            filter_kwargs = {self.lookup_field: self.request.data.get('id')}
+            obj = get_object_or_404(queryset, **filter_kwargs)
+            self.check_object_permissions(self.request, obj)
+            return obj
+        else:
+            return super(UserViewSet, self).get_object()
+
 
 # class UserList(generics.ListAPIView):
 #     queryset = User.objects.all()
